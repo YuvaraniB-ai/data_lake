@@ -4,7 +4,7 @@ services:
     image: 'trinodb/trino:446'
     hostname: trino-coordinator
     ports:
-      - '8080:8080'
+      - '8081:8080'
     volumes:
       - ./etc:/etc/trino
       - ./conf:/etc/trino/conf
@@ -22,6 +22,21 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: hive_db
+    networks:
+      - trino-network
+
+  postgres-data:
+    image: 'postgres:11'
+    hostname: postgres-data
+    container_name: postgres-data
+    expose:
+      - '5432'
+    ports:
+      - '5433:5432'  # Different external port to avoid clash
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: data_db
     networks:
       - trino-network
 
@@ -56,6 +71,17 @@ services:
       MINIO_ROOT_PASSWORD: minio123
       
     command: server --console-address ":9001" /data
+    networks:
+      - trino-network
+
+  etl-runner:
+    build:
+      context: ./etl
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres-data
+      - minio
+      - trino-coordinator
     networks:
       - trino-network
 
