@@ -1,11 +1,28 @@
 import os
+import time
+import socket
 import chardet
 import pandas as pd
 import boto3
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from trino.dbapi import connect
 from config_sales import *
-from sqlalchemy import text
+
+def wait_for_service(host, port, service_name, timeout=30):
+    print(f" Waiting for {service_name} at {host}:{port} ...")
+    for i in range(timeout):
+        try:
+            with socket.create_connection((host, int(port)), timeout=2):
+                print(f" {service_name} is up.")
+                return
+        except Exception:
+            time.sleep(1)
+    raise Exception(f" {service_name} at {host}:{port} didn't respond after {timeout} seconds.")
+
+# Wait for dependent services
+wait_for_service(PG_HOST, PG_PORT, "PostgreSQL")
+wait_for_service(TRINO_HOST, TRINO_PORT, "Trino")
+wait_for_service("minio", 9000, "MinIO")
 
 # STEP 1: Detect encoding and read CSV
 print(" Detecting file encoding...")
@@ -26,7 +43,7 @@ with engine.connect() as conn:
     conn.execute(text(f"CREATE SCHEMA IF NOT EXISTS {PG_SCHEMA}"))
     df.to_sql(TABLE_NAME, conn, schema=PG_SCHEMA, if_exists='replace', index=False)
 
-#  STEP 3: Convert to Parquet
+# STEP 3: Convert to Parquet
 print(" Converting to Parquet...")
 df.to_parquet(PARQUET_FILE, engine="pyarrow", index=False)
 
@@ -39,9 +56,11 @@ s3 = boto3.client(
     aws_secret_access_key=MINIO_SECRET_KEY,
 )
 
-# Create bucket if not exists
-existing_buckets = [b["Name"] for b in s3.list_buckets()["Buckets"]]
-if MINIO_BUCKET not in existing_buckets:
+# Create bucket if it doesn't exist
+buckets = s3.list_buckets().get("Buckets", [])
+bucket_names = [b["Name"] for b in buckets]
+if MINIO_BUCKET not in bucket_names:
+    print(f" Creating bucket: {MINIO_BUCKET}")
     s3.create_bucket(Bucket=MINIO_BUCKET)
 
 s3.upload_file(PARQUET_FILE, MINIO_BUCKET, S3_KEY)

@@ -74,16 +74,20 @@ services:
     networks:
       - trino-network
 
-  etl-runner:
+  sales-etl:
     build:
-      context: ./etl
-      dockerfile: Dockerfile
+      context: ./etl/csv_to_hive
+    container_name: sales-etl
     depends_on:
       - postgres-data
       - minio
       - trino-coordinator
+      - hive-metastore
     networks:
       - trino-network
+    volumes:
+      - ./etl/csv_to_hive/data:/app/data
+    restart: "no"
 
 volumes:
   minio-data:
