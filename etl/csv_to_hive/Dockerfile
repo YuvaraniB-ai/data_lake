@@ -16,4 +16,4 @@ COPY sales_etl.py .
 COPY config_sales.py .
 COPY data/ ./data/
 
-CMD ["python", "sales_etl.py"]
+CMD ["python", "sales_etl.py", "run"]

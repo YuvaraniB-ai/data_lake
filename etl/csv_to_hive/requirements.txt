@@ -5,3 +5,4 @@ pyarrow
 boto3
 trino
 chardet
+metaflow[s3,aws]

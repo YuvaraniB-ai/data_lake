@@ -4,7 +4,7 @@ services:
     image: 'trinodb/trino:446'
     hostname: trino-coordinator
     ports:
-      - '8081:8080'
+      - '8080:8080'
     volumes:
       - ./etc:/etc/trino
       - ./conf:/etc/trino/conf
@@ -87,8 +87,12 @@ services:
       - trino-network
     volumes:
       - ./etl/csv_to_hive/data:/app/data
+    tty: true
+    stdin_open: true
+    command: tail -f /dev/null
     restart: "no"
-
+    environment:
+      METAFLOW_USER: yuvarani
 volumes:
   minio-data:
     driver: local
