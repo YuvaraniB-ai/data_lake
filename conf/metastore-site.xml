@@ -12,9 +12,13 @@
         <name>metastore.expression.proxy</name>
         <value>org.apache.hadoop.hive.metastore.DefaultPartitionExpressionProxy</value>
     </property>
-        <property>
-        <name>metastore.warehouse.dir</name>
-        <value>s3a://metastore/</value>
+    <property>
+        <name>hive.security.metastore.authorization.manager</name>
+        <value>org.apache.hadoop.hive.ql.security.authorization.StorageBasedAuthorizationProvider</value>
+    </property>
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>s3a://dockertestbucket/test_tables</value>
     </property>
     <property>
         <name>javax.jdo.option.ConnectionDriverName</name>
@@ -53,6 +57,10 @@
     <property>
         <name>fs.s3a.path.style.access</name>
         <value>true</value>
+    </property>
+    <property>
+    <name>hive.metastore.pre.event.listeners</name>
+    <value>org.apache.hadoop.hive.ql.security.authorization.AuthorizationPreEventListener</value>
     </property>
 
     <!-- Enable ACID support -->
