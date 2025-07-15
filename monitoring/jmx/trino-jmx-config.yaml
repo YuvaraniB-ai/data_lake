@@ -1,0 +1,9 @@
+# ./monitoring/jmx/trino-jmx-config.yaml
+
+startDelaySeconds: 0
+jmxUrl: ""
+lowercaseOutputName: true
+lowercaseOutputLabelNames: true
+
+rules:
+  - pattern: ".*"

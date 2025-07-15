@@ -4,10 +4,15 @@ services:
     hostname: trino-coordinator
     ports:
       - '8081:8080'
+      - '7071:7071'
     volumes:
       - ./conf/core-site.xml:/etc/trino/etc/hadoop/core-site.xml
       - ./conf/metastore-site.xml:/etc/trino/metastore-site.xml
       - ./etc/catalog:/etc/trino/catalog
+      - ./etc/jvm.config:/etc/trino/jvm.config
+      - ./monitoring/jmx/jmx_prometheus_javaagent-0.20.0.jar:/opt/jmx/jmx_prometheus_javaagent.jar:ro
+      - ./monitoring/jmx/trino-jmx-config.yaml:/opt/jmx/trino-jmx-config.yaml:ro
+
     networks:
       - trino-network
 
@@ -44,13 +49,18 @@ services:
     image: 'my-hive-metastore:latest'
     hostname: hive-metastore
     ports:
-      - '9083:9083' # Metastore Thrift
+      - '9083:9083'   # Metastore Thrift
+      - '7070:7070'   # JMX Exporter port
     volumes:
       - ./conf/metastore-site.xml:/opt/apache-hive-metastore-3.0.0-bin/conf/metastore-site.xml:ro
       - ./conf/core-site.xml:/opt/apache-hive-metastore-3.0.0-bin/conf/core-site.xml:ro
+      - ./monitoring/jmx/jmx_prometheus_javaagent-0.20.0.jar:/opt/jmx/jmx_prometheus_javaagent.jar:ro
+      - ./monitoring/jmx/hive-jmx-config.yaml:/opt/jmx/hive-jmx-config.yaml:ro
     environment:
       METASTORE_DB_HOSTNAME: postgres
       METASTORE_TYPE: postgres
+      JAVA_TOOL_OPTIONS: >
+        -javaagent:/opt/jmx/jmx_prometheus_javaagent.jar=7070:/opt/jmx/hive-jmx-config.yaml
     depends_on:
       - postgres
     networks:
@@ -70,6 +80,7 @@ services:
       MINIO_SECRET_KEY: minio123
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
+      MINIO_PROMETHEUS_AUTH_TYPE: "public"
       
     command: server --console-address ":9001" /data
     networks:
@@ -94,8 +105,69 @@ services:
     restart: "no"
     environment:
       METAFLOW_USER: yuvarani
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+    ports:
+      - '9090:9090'
+    networks:
+      - trino-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - '3000:3000'
+    networks:
+      - trino-network
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: alertmanager
+    ports:
+      - '9093:9093'
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+    networks:
+      - trino-network
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://admin:admin@postgres:5432/hive_db?sslmode=disable"
+    ports:
+      - '9187:9187'
+    depends_on:
+      - postgres
+    networks:
+      - trino-network
+
+  postgres-data-exporter:
+    image: prometheuscommunity/postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://admin:admin123@postgres-data:5432/data_db?sslmode=disable"
+    ports:
+      - '9188:9187'
+    depends_on:
+      - postgres-data
+    networks:
+      - trino-network
+
 volumes:
   minio-data:
+    driver: local
+  grafana-storage:
     driver: local
 
 networks:
