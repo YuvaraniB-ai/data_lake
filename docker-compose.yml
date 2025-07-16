@@ -16,6 +16,12 @@ services:
     networks:
       - trino-network
 
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: trino.logs
+
   postgres:
     image: 'postgres:11'
     hostname: postgres
@@ -29,6 +35,11 @@ services:
       POSTGRES_DB: hive_db
     networks:
       - trino-network
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: postgres.logs
 
   postgres-data:
     image: 'postgres:11'
@@ -44,6 +55,11 @@ services:
       POSTGRES_DB: data_db
     networks:
       - trino-network
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: postgres.data.logs
 
   hive-metastore:
     image: 'my-hive-metastore:latest'
@@ -65,6 +81,11 @@ services:
       - postgres
     networks:
       - trino-network
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: hive.logs
 
   minio:
     image: 'minio/minio:latest'
@@ -85,6 +106,11 @@ services:
     command: server --console-address ":9001" /data
     networks:
       - trino-network
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: minio.logs
 
   sales-etl:
     build:
@@ -106,6 +132,12 @@ services:
     environment:
       METAFLOW_USER: yuvarani
 
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: etl.logs
+
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -116,6 +148,11 @@ services:
       - '9090:9090'
     networks:
       - trino-network
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: prometheus.logs
 
   grafana:
     image: grafana/grafana:latest
@@ -129,6 +166,11 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: grafana.logs
 
   alertmanager:
     image: prom/alertmanager:latest
@@ -141,6 +183,11 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
     networks:
       - trino-network
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: alertmanager.logs
 
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter
@@ -152,6 +199,11 @@ services:
       - postgres
     networks:
       - trino-network
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: postgres.exporter.logs
 
   postgres-data-exporter:
     image: prometheuscommunity/postgres-exporter
@@ -164,6 +216,12 @@ services:
     networks:
       - trino-network
 
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: 172.28.0.5:24224
+        tag: postgres.data.exporter.logs
+
 volumes:
   minio-data:
     driver: local
@@ -172,4 +230,4 @@ volumes:
 
 networks:
   trino-network:
-    driver: bridge
+    external: true
