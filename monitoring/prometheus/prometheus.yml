@@ -13,7 +13,7 @@ scrape_configs:
 
   - job_name: 'trino'
     static_configs:
-      - targets: ['trino-coordinator:7071']   # Updated port
+      - targets: ['trino-coordinator:7071']
 
   - job_name: 'hive'
     static_configs:

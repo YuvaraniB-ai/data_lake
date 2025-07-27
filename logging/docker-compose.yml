@@ -2,7 +2,7 @@
 services:
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.13.4
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.3-amd64
     container_name: elasticsearch
     environment:
       - discovery.type=single-node
@@ -15,7 +15,7 @@ services:
       - trino-network
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.13.4
+    image: docker.elastic.co/kibana/kibana:9.0.3-amd64
     container_name: kibana
     ports:
       - "5601:5601"
@@ -26,23 +26,9 @@ services:
     networks:
       - trino-network
 
-  logstash:
-    image: docker.elastic.co/logstash/logstash:8.13.4
-    container_name: logstash
-    ports:
-      - "5000:5000"
-      - "9600:9600"
-    volumes:
-      - ./logstash/pipeline:/usr/share/logstash/pipeline
-    depends_on:
-      - elasticsearch
-    networks:
-      - trino-network
 
   fluentd:
-    build:
-      context: ./fluentd
-      dockerfile: Dockerfile
+    image: fluentd
     container_name: fluentd
     volumes:
       - ./fluentd/conf:/fluentd/etc
@@ -51,8 +37,10 @@ services:
       - "24224:24224"
       - "24224:24224/udp"
     networks:
-      trino-network:
-       ipv4_address: 172.28.0.5
+      - trino-network
+    depends_on:
+      - elasticsearch
+
 
 networks:
   trino-network:

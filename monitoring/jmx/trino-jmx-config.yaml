@@ -1,4 +1,4 @@
-# ./monitoring/jmx/trino-jmx-config.yaml
+
 
 startDelaySeconds: 0
 jmxUrl: ""

@@ -34,7 +34,7 @@
     </property>
     <property>
         <name>javax.jdo.option.ConnectionPassword</name>
-        <value>admin</value>
+        <value>admin123</value>
     </property>
     <!-- <property>
         <name>metastore.try.direct.sql.ddl</name>

@@ -1,0 +1,5 @@
+respcd,desc
+01,Insufficient Balance
+05,Authentication Failed
+12,Bank Timeout
+51,User blocked

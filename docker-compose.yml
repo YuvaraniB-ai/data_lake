@@ -19,7 +19,7 @@ services:
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: trino.logs
 
   postgres:
@@ -31,14 +31,16 @@ services:
       - '5431:5432'
     environment:
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_PASSWORD: admin123
       POSTGRES_DB: hive_db
     networks:
       - trino-network
+    volumes:
+      - hive_pgdata:/var/lib/postgresql/data
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: postgres.logs
 
   postgres-data:
@@ -53,12 +55,15 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
       POSTGRES_DB: data_db
+    volumes:
+      - ./csv-upload:/csv
+      - data_pgdata:/var/lib/postgresql/data
     networks:
       - trino-network
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: postgres.data.logs
 
   hive-metastore:
@@ -84,7 +89,7 @@ services:
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: hive.logs
 
   minio:
@@ -109,41 +114,15 @@ services:
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: minio.logs
 
-  sales-etl:
-    build:
-      context: ./etl/csv_to_hive
-    container_name: sales-etl
-    depends_on:
-      - postgres-data
-      - minio
-      - trino-coordinator
-      - hive-metastore
-    networks:
-      - trino-network
-    volumes:
-      - ./etl/csv_to_hive/data:/app/data
-    tty: true
-    stdin_open: true
-    command: tail -f /dev/null
-    restart: "no"
-    environment:
-      METAFLOW_USER: yuvarani
-
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: 172.28.0.5:24224
-        tag: etl.logs
 
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
     ports:
       - '9090:9090'
     networks:
@@ -151,7 +130,7 @@ services:
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: prometheus.logs
 
   grafana:
@@ -169,25 +148,8 @@ services:
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: grafana.logs
-
-  alertmanager:
-    image: prom/alertmanager:latest
-    container_name: alertmanager
-    ports:
-      - '9093:9093'
-    volumes:
-      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
-    command:
-      - '--config.file=/etc/alertmanager/alertmanager.yml'
-    networks:
-      - trino-network
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: 172.28.0.5:24224
-        tag: alertmanager.logs
 
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter
@@ -202,7 +164,7 @@ services:
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: postgres.exporter.logs
 
   postgres-data-exporter:
@@ -219,13 +181,17 @@ services:
     logging:
       driver: "fluentd"
       options:
-        fluentd-address: 172.28.0.5:24224
+        fluentd-address: localhost:24224
         tag: postgres.data.exporter.logs
 
 volumes:
   minio-data:
     driver: local
   grafana-storage:
+    driver: local
+  hive_pgdata:
+    driver: local
+  data_pgdata:
     driver: local
 
 networks:
