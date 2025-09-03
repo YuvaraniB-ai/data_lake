@@ -70,11 +70,11 @@ services:
     image: 'my-hive-metastore:latest'
     hostname: hive-metastore
     ports:
-      - '9083:9083'   # Metastore Thrift
-      - '7070:7070'   # JMX Exporter port
+      - '9083:9083'
+      - '7070:7070'
     volumes:
-      - ./conf/metastore-site.xml:/opt/apache-hive-metastore-3.0.0-bin/conf/metastore-site.xml:ro
-      - ./conf/core-site.xml:/opt/apache-hive-metastore-3.0.0-bin/conf/core-site.xml:ro
+      - ./conf/metastore-site.xml:/opt/apache-hive-3.1.3-bin/conf/hive-site.xml
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
       - ./monitoring/jmx/jmx_prometheus_javaagent-0.20.0.jar:/opt/jmx/jmx_prometheus_javaagent.jar:ro
       - ./monitoring/jmx/hive-jmx-config.yaml:/opt/jmx/hive-jmx-config.yaml:ro
     environment:
